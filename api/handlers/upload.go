@@ -71,7 +71,7 @@ func describeImage(imagePath string) (string, error) {
 				"content": []map[string]interface{}{
 					{
 						"type": "text",
-						"text": "Describe the objects in this image.",
+						"text": "Describe the objects in this image. give me in persian language.",
 					},
 					{
 						"type": "image_url",
