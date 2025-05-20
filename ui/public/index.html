@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Upload with Description</title>
+    <style>
+      :root {
+        --primary: #4361ee;
+        --primary-dark: #3a56d4;
+        --secondary: #f8f9fa;
+        --text: #2b2d42;
+        --text-light: #8d99ae;
+        --white: #ffffff;
+        --success: #4bb543;
+        --error: #ff3333;
+        --border-radius: 12px;
+        --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        --transition: all 0.3s ease;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        background-color: var(--secondary);
+        color: var(--text);
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 800px;
+        padding: 2rem;
+        margin: 2rem auto;
+      }
+
+      .card {
+        background: var(--white);
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        padding: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      h2 {
+        color: var(--primary);
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .upload-area {
+        border: 2px dashed var(--primary);
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        transition: var(--transition);
+      }
+
+      .upload-area:hover {
+        background-color: rgba(67, 97, 238, 0.05);
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      .file-label {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background-color: var(--primary);
+        color: var(--white);
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        transition: var(--transition);
+        font-weight: 500;
+      }
+
+      .file-label:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+      }
+
+      .file-name {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: var(--text-light);
+      }
+
+      button[type="submit"] {
+        width: 100%;
+        padding: 1rem;
+        background-color: var(--primary);
+        color: var(--white);
+        border: none;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+
+      button[type="submit"]:hover {
+        background-color: var(--primary-dark);
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.2);
+      }
+
+      button[type="submit"]:disabled {
+        background-color: var(--text-light);
+        cursor: not-allowed;
+      }
+
+      #response {
+        width: 100%;
+        margin-top: 1.5rem;
+      }
+
+      .response-card {
+        padding: 1.5rem;
+        border-radius: var(--border-radius);
+      }
+
+      .success {
+        background-color: rgba(75, 181, 67, 0.1);
+        border-left: 4px solid var(--success);
+      }
+
+      .error {
+        background-color: rgba(255, 51, 51, 0.1);
+        border-left: 4px solid var(--error);
+      }
+
+      .loading {
+        color: var(--text-light);
+        text-align: center;
+        padding: 1rem;
+      }
+
+      .uploaded-image {
+        width: 100%;
+        max-height: 400px;
+        object-fit: contain;
+        border-radius: var(--border-radius);
+        margin-top: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .info-item {
+        margin-bottom: 0.75rem;
+      }
+
+      .info-item strong {
+        color: var(--primary);
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 1rem;
+        }
+
+        .card {
+          padding: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <h2>Upload an Image</h2>
+        <form
+          id="uploadForm"
+          enctype="multipart/form-data"
+          method="post"
+          action="http://localhost:8080/api/upload"
+        >
+          <div class="upload-area">
+            <input
+              type="file"
+              id="fileInput"
+              class="file-input"
+              name="image"
+              accept="image/*"
+              required
+            />
+            <label for="fileInput" class="file-label">Choose an Image</label>
+            <div id="fileName" class="file-name">No file selected</div>
+          </div>
+          <button type="submit">Upload Image</button>
+        </form>
+      </div>
+
+      <div id="response"></div>
+    </div>
+
+    <script>
+      const form = document.getElementById("uploadForm");
+      const fileInput = document.getElementById("fileInput");
+      const fileName = document.getElementById("fileName");
+      const responseBox = document.getElementById("response");
+
+      // Update file name display when file is selected
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+          fileName.textContent = e.target.files[0].name;
+        } else {
+          fileName.textContent = "No file selected";
+        }
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        // Clear previous response
+        responseBox.innerHTML = `
+          <div class="card response-card loading">
+            Uploading your image...
+          </div>
+        `;
+
+        const formData = new FormData(form);
+
+        try {
+          const res = await fetch(form.action, {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await res.json();
+          console.log(data);
+
+          if (res.ok) {
+            const { image, description } = data;
+            responseBox.innerHTML = `
+              <div class="card response-card success">
+                <p><strong>✓ Upload successful!</strong></p>
+                <div class="info-item"><strong>Image:</strong> ${image}</div>
+                <div class="info-item"><strong>Description:</strong> ${
+                  description || "N/A"
+                }</div>
+                <img 
+                  src="${"http://localhost:8080/images/" + image}" 
+                  alt="Uploaded Image" 
+                  class="uploaded-image"
+                />
+              </div>
+            `;
+          } else {
+            responseBox.innerHTML = `
+              <div class="card response-card error">
+                <p><strong>✗ Upload failed:</strong> ${
+                  data.message || "Unknown error occurred"
+                }</p>
+              </div>
+            `;
+          }
+        } catch (err) {
+          console.error(err);
+          responseBox.innerHTML = `
+            <div class="card response-card error">
+              <p><strong>✗ An error occurred:</strong> ${
+                err.message || "Network error"
+              }</p>
+            </div>
+          `;
+        }
+      });
+    </script>
+  </body>
+</html>
